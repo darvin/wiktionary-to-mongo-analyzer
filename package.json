@@ -1,0 +1,23 @@
+{
+  "name": "wiktionary-to-mongo-analyzer",
+  "version": "1.0.0",
+  "description": "Analyzes Wiktionary and stores results in mondodb",
+  "main": "index.js",
+  "scripts": {
+    "test": "node_modules/mocha/bin/_mocha tests/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darvin/wiktionary-to-mongo-analyzer.git"
+  },
+  "author": "Sergey Klimov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/darvin/wiktionary-to-mongo-analyzer/issues"
+  },
+  "homepage": "https://github.com/darvin/wiktionary-to-mongo-analyzer#readme",
+  "devDependencies": {
+    "circleci": "^0.2.0",
+    "mocha": "^2.3.3"
+  }
+}
