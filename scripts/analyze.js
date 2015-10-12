@@ -9,10 +9,9 @@ var path = require('path');
 
 var ForkPool = require('fork-pool');
 
-var numberWorkers  = require('os').cpus().length;
 
-console.log("FOUND CPUS: ",numberWorkers);
-
+console.log("FOUND CPUS: ",require('os').cpus());
+var numberWorkers  = 8;
 var Pool = new ForkPool(__dirname + '/analyze_worker.js', null, null, {size: numberWorkers});
 
 setTimeout(function(){
