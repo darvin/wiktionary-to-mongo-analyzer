@@ -2,9 +2,11 @@ machine:
   node:
     version: 0.12.7
 dependencies: 
+  pre:
+  - ./build_mongo_analyzed_dump.sh
   cache_directories:
   - ./build
 
 test:
   post:
-  - ./build_mongo_analyzed_dump.sh
+  - echo "done"
