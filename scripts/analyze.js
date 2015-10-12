@@ -3,8 +3,8 @@
 
 var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://localhost:27017/wiktionaryToMongo';
-var LOG_EVERY = 10;
-var LIMIT = 300;
+var LOG_EVERY = 30;
+var LIMIT = null;
 var path = require('path');
 
 var ForkPool = require('fork-pool');
@@ -31,7 +31,7 @@ setTimeout(function(){
           if (indexSaved % LOG_EVERY==0) {
             console.log ("Analyzed: "+indexSaved+"/"+total);
           }
-          if (indexSaved>=LIMIT) {
+          if (indexSaved>=total) {
             console.timeEnd("total");
             console.log("FINISHED ANALYZING");
             Pool.drain(function (err) {
@@ -64,7 +64,7 @@ setTimeout(function(){
 
             if (err)
               console.error(err);
-            if (!doc || (LIMIT && index>LIMIT)) {
+            if (!doc || index>total) {
               stop();
             } else {
               if (index % LOG_EVERY==0) {
