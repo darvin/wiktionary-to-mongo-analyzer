@@ -100,4 +100,4 @@ setTimeout(function(){
       });
 
   });
-}, 4000);
+}, numberWorkers * 1000);
