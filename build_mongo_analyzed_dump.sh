@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+set -o pipefail
 
 mkdir ./build
 
@@ -11,6 +12,6 @@ fi
 
 bunzip2 $BZIPPED_DUMP
 
-mongoimport  --db wiktionaryToMongo $DUMP
+mongoimport  --db wiktionaryToMongo < $DUMP
 
 rm $DUMP
