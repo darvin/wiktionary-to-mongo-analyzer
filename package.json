@@ -18,6 +18,8 @@
   "homepage": "https://github.com/darvin/wiktionary-to-mongo-analyzer#readme",
   "devDependencies": {
     "circleci": "^0.2.0",
-    "mocha": "^2.3.3"
+    "enwiktionary-analyzer": "0.0.5",
+    "mocha": "^2.3.3",
+    "mongodb": "^2.0.45"
   }
 }
