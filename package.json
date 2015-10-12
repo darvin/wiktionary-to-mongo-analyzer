@@ -18,6 +18,7 @@
   "homepage": "https://github.com/darvin/wiktionary-to-mongo-analyzer#readme",
   "dependencies": {
     "enwiktionary-analyzer": "0.0.5",
+    "fork-pool": "0.0.2",
     "mongodb": "^2.0.45"
   },
   "devDependencies": {

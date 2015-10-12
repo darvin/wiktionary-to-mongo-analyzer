@@ -7,69 +7,86 @@ var LOG_EVERY = 1;
 var LIMIT = 50;
 var path = require('path');
 
-var Worker = require('webworker-threads').Worker;
+var ForkPool = require('fork-pool');
 
-var outputWorker = new Worker(path.join(__dirname, "analyze_worker.js"));
-/*
-var outputWorker = new Worker(function() {
-      this.onmessage = function (event) {
-        var doc = JSON.parse(event.data);
-        console.log("received", doc);
-          postMessage("next");
-      }
-});
-*/
+var numberWorkers  = require('os').cpus().length;
 
+console.log("FOUND CPUS: ",numberWorkers);
 
-console.log("FOUND CPUS: ",require('os').cpus().length);
-MongoClient.connect(url, function(err, db) {
+var Pool = new ForkPool(__dirname + '/analyze_worker.js', null, null, {size: numberWorkers});
 
-  var col = db.collection('enWiktionaryDump');
-  var colOutput = db.collection('enWiktionary');
+setTimeout(function(){
+  MongoClient.connect(url, function(err, db) {
 
-    var cursor = col.find({});
-    var index = 0;
-    var indexSaved = 0;
-    cursor.count(function(err, total){
-      console.time("total");
+    var col = db.collection('enWiktionaryDump');
+    var colOutput = db.collection('enWiktionary');
 
-      
+      var cursor = col.find({});
+      var index = 0;
+      var indexSaved = 0;
+      cursor.count(function(err, total){
+        console.time("total");
 
-      var analyzeNext = function(worker) {
-        var stopped = false;
-        var stop = function() {
-          if (stopped)
-            return;
-          else {
-            console.log("FINISHED READING");
-
-            stopped = true;
-            db.close();
+        var finishedSaving = function() {
+          indexSaved++;
+          if (indexSaved>=LIMIT) {
+            console.timeEnd("total");
+            console.log("FINISHED ANALYZING");
+            return true;
+          }
+          if (indexSaved % LOG_EVERY==0) {
+            console.log ("Analyzed: "+indexSaved+"/"+total);
           }
         }
-        cursor.nextObject(function(err, doc) {
-          if (err)
-            console.error(err);
-          if (!doc || (LIMIT && index>=LIMIT)) {
-            stop();
-          } else {
-            index ++;
-            if (index % LOG_EVERY==0) {
-              console.log ("Read: "+index+"/"+total + " (current: '"+doc.title+"' )");
+
+        var analyzeNext = function() {
+          var stopped = false;
+          var stop = function() {
+            if (stopped)
+              return;
+            else {
+              console.log("FINISHED READING");
+
+              stopped = true;
+              db.close();
             }
-            // console.log(doc);
-            outputWorker.postMessage(JSON.stringify(doc));
-
-
           }
-        });
-      }
-      outputWorker.onmessage = function (event) {
-        if (event.data=="next")
-          analyzeNext(outputWorker);
-      };
-      analyzeNext(outputWorker);
+          cursor.nextObject(function(err, doc) {
+            if (err)
+              console.error(err);
+            if (!doc || (LIMIT && index>=LIMIT)) {
+              stop();
+            } else {
+              index ++;
+              if (index % LOG_EVERY==0) {
+                console.log ("Read: "+index+"/"+total + " (current: '"+doc.title+"' )");
+              }
+              // console.log(doc);
+              var docStr = JSON.stringify(doc);
+              var enqueue = function() {
+                Pool.enqueue(docStr, function (err, res) {
+                  console.log("got response: ",res);
+                  if (res.stdout=="next") {
+                    console.log("POOL: next");
+                    if (!finishedSaving())
+                      analyzeNext();
+                  } else {
+                    console.log("POOL: ERROR!");
+                  }
+                });
+              }
+              console.log("POOL: enqueing");
+              enqueue();
 
-    });
+            }
+          });
+        }
+        for (var i = 0; i <=numberWorkers; i++) {
+          analyzeNext();
+        };
 
-});
+
+      });
+
+  });
+}, 3000);
