@@ -16,10 +16,13 @@
     "url": "https://github.com/darvin/wiktionary-to-mongo-analyzer/issues"
   },
   "homepage": "https://github.com/darvin/wiktionary-to-mongo-analyzer#readme",
+  "dependencies": {
+    "enwiktionary-analyzer": "0.0.5",
+    "mongodb": "^2.0.45"
+  },
   "devDependencies": {
     "circleci": "^0.2.0",
-    "enwiktionary-analyzer": "0.0.5",
     "mocha": "^2.3.3",
-    "mongodb": "^2.0.45"
+    "webworker-threads": "^0.6.2"
   }
 }
