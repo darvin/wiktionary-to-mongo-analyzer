@@ -12,6 +12,6 @@ fi
 
 bunzip2 $BZIPPED_DUMP
 
-mongoimport  --db wiktionaryToMongo < $DUMP
+mongoimport  --db wiktionaryToMongo --collection enWiktionaryDump --drop --file  $DUMP
 
 rm $DUMP
