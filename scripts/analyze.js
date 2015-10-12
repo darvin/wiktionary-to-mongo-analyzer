@@ -4,7 +4,7 @@
 var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://localhost:27017/wiktionaryToMongo';
 var wiktAnalyzer = require('enwiktionary-analyzer');
-var LOG_EVERY = 10000;
+var LOG_EVERY = 300;
 MongoClient.connect(url, function(err, db) {
 
   var col = db.collection('enWiktionaryDump');
