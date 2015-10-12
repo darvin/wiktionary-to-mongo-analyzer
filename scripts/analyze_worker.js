@@ -39,10 +39,15 @@ MongoClient.connect(url, function(err, db) {
     console.log("WORKER ready");
     process.on('message', function (message) {
       var doc = JSON.parse(message);
-      analyzeAndWrite(doc, function(err, res){
+      var finished = function(){
         console.log("WORKER: analyzed '"+doc.title+ "'")
         process.send("next");
+
+      }
+      analyzeAndWrite(doc, function(err, res){
+        finished();
       });
+      // setTimeout(finished, 1000);
 
     });
 

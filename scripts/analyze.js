@@ -21,7 +21,7 @@ setTimeout(function(){
     var col = db.collection('enWiktionaryDump');
     var colOutput = db.collection('enWiktionary');
 
-      var cursor = col.find({});
+      var cursor = col.find({});//, {title:1, namespace:1});
       var index = 0;
       var indexSaved = 0;
       cursor.count(function(err, total){
@@ -29,38 +29,48 @@ setTimeout(function(){
 
         var finishedSaving = function() {
           indexSaved++;
-          if (indexSaved>=LIMIT) {
-            console.timeEnd("total");
-            console.log("FINISHED ANALYZING");
-            return true;
-          }
           if (indexSaved % LOG_EVERY==0) {
             console.log ("Analyzed: "+indexSaved+"/"+total);
           }
+          if (indexSaved>=LIMIT) {
+            console.timeEnd("total");
+            console.log("FINISHED ANALYZING");
+            Pool.drain(function (err) {
+              process.exit(0);
+            })
+            return true;
+          }
+          
         }
 
+        var stopped = false;
+
         var analyzeNext = function() {
-          var stopped = false;
+          console.log("POOL: 1");
           var stop = function() {
             if (stopped)
               return;
             else {
-              console.log("FINISHED READING");
 
               stopped = true;
+              console.log("FINISHED READING");
               db.close();
             }
           }
+
           cursor.nextObject(function(err, doc) {
+                      console.log("POOL: 2");
+
             if (err)
               console.error(err);
-            if (!doc || (LIMIT && index>=LIMIT)) {
+            if (!doc || (LIMIT && index>LIMIT)) {
               stop();
             } else {
-              index ++;
               if (index % LOG_EVERY==0) {
                 console.log ("Read: "+index+"/"+total + " (current: '"+doc.title+"' )");
               }
+              index ++;
+
               // console.log(doc);
               var docStr = JSON.stringify(doc);
               var enqueue = function() {
@@ -82,11 +92,11 @@ setTimeout(function(){
           });
         }
         for (var i = 0; i <=numberWorkers; i++) {
-          analyzeNext();
+          setTimeout(analyzeNext, 20*i);
         };
 
 
       });
 
   });
-}, 3000);
+}, 2000);
