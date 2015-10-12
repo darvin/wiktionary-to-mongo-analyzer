@@ -3,8 +3,8 @@
 
 var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://localhost:27017/wiktionaryToMongo';
-var LOG_EVERY = 1;
-var LIMIT = 50;
+var LOG_EVERY = 10;
+var LIMIT = 300;
 var path = require('path');
 
 var ForkPool = require('fork-pool');
@@ -38,6 +38,8 @@ setTimeout(function(){
             Pool.drain(function (err) {
               process.exit(0);
             })
+            process.exit(0);
+
             return true;
           }
           
@@ -46,7 +48,7 @@ setTimeout(function(){
         var stopped = false;
 
         var analyzeNext = function() {
-          console.log("POOL: 1");
+          // console.log("POOL: 1");
           var stop = function() {
             if (stopped)
               return;
@@ -59,7 +61,7 @@ setTimeout(function(){
           }
 
           cursor.nextObject(function(err, doc) {
-                      console.log("POOL: 2");
+            // console.log("POOL: 2");
 
             if (err)
               console.error(err);
@@ -75,9 +77,8 @@ setTimeout(function(){
               var docStr = JSON.stringify(doc);
               var enqueue = function() {
                 Pool.enqueue(docStr, function (err, res) {
-                  console.log("got response: ",res);
                   if (res.stdout=="next") {
-                    console.log("POOL: next");
+                    // console.log("POOL: next");
                     if (!finishedSaving())
                       analyzeNext();
                   } else {
@@ -85,18 +86,18 @@ setTimeout(function(){
                   }
                 });
               }
-              console.log("POOL: enqueing");
+              // console.log("POOL: enqueing");
               enqueue();
 
             }
           });
         }
         for (var i = 0; i <=numberWorkers; i++) {
-          setTimeout(analyzeNext, 20*i);
+          setTimeout(analyzeNext, 50*i);
         };
 
 
       });
 
   });
-}, 2000);
+}, 4000);

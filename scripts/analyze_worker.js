@@ -8,7 +8,7 @@ var url = 'mongodb://localhost:27017/wiktionaryToMongo';
 
 
 MongoClient.connect(url, function(err, db) {
-  console.log("WORKER connected to db");
+  // console.log("WORKER connected to db");
 
   var colOutput = db.collection('enWiktionary');
   colOutput.ensureIndex({wordLanguage:1, wordName:1}, {unique:true}, function(err,res) {
@@ -40,7 +40,7 @@ MongoClient.connect(url, function(err, db) {
     process.on('message', function (message) {
       var doc = JSON.parse(message);
       var finished = function(){
-        console.log("WORKER: analyzed '"+doc.title+ "'")
+        // console.log("WORKER: analyzed '"+doc.title+ "'")
         process.send("next");
 
       }
@@ -52,4 +52,9 @@ MongoClient.connect(url, function(err, db) {
     });
 
   });
+});
+
+
+process.on('SIGINT', function (){
+  console.log('WORKER exit');
 });
