@@ -35,7 +35,7 @@ setTimeout(function(){
       var cursor = col.find({}, {title:1, namespace:1}, {timeout:true});
       var index = 0;
       var indexSaved = 0;
-      if (LIMIT);
+      if (LIMIT)
         cursor = cursor.limit(LIMIT);
       cursor.count(function(err, total){
         console.time("total");
