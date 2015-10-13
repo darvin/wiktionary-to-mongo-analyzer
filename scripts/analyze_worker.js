@@ -20,7 +20,6 @@ MongoClient.connect(url, function(err, db) {
     var analyzeAndWrite = function(doc, callback) {
       col.findOne({title:doc.title, namespace:doc.namespace}, function(err, doc) {
         wiktAnalyzer.analyzer.parseArticle(doc.title, doc.text, function(err, parsedArticle) {
-          
           if (err || !parsedArticle || Object.keys(parsedArticle).length == 0) {
             console.error("Error parsing article: '"+doc.title+"' ", err)
             callback(err);
@@ -43,14 +42,17 @@ MongoClient.connect(url, function(err, db) {
         });
       });
     };
-    console.log("WORKER ready");
+    // console.log("WORKER ready");
     process.on('message', function (message) {
-      var doc = JSON.parse(message);
+
+      var doc = message;
       var finished = function(err){
-        console.log("WORKER: analyzed '"+doc.title+ "'")
-        if (err)
-          console.log("WORKER error: ", err);
-        process.send("next");
+        if (err) {
+          console.log("! Error processing '"+doc.title+"' :", err);
+          process.send("x");
+        }
+        else
+          process.send(".");
 
       }
       analyzeAndWrite(doc, function(err, res){

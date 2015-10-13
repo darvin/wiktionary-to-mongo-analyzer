@@ -3,17 +3,28 @@
 
 var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://localhost:27017/wiktionaryToMongo';
-var LOG_EVERY = 1;
-var LIMIT = 8;
+var LOG_EVERY = 1000;
+var LIMIT = 1000;
 var path = require('path');
+var fs = require('fs');
+// var lineStream = require('line-stream');
+ 
+var forkfriend = require('forkfriend');
+ 
 
-var ForkPool = require('fork-pool');
 
 
 console.log("FOUND CPUS: ",require('os').cpus());
-var numberWorkers  = 8;
-var spinupTime = numberWorkers * 1000;
-var Pool = new ForkPool(__dirname + '/analyze_worker.js', null, null, {size: numberWorkers, timeout: spinupTime*2});
+var numberWorkers  = require('os').cpus().length;
+
+var manager = forkfriend({
+  respawnInterval:300,
+  maxQueue:numberWorkers * 2
+});
+
+var spinupTime = numberWorkers * 500;
+manager.add(path.join(__dirname, 'analyze_worker.js'),numberWorkers);
+
 
 setTimeout(function(){
   MongoClient.connect(url, function(err, db) {
@@ -29,78 +40,36 @@ setTimeout(function(){
       cursor.count(function(err, total){
         console.time("total");
 
-        var finishedSaving = function() {
-          indexSaved++;
+        var inputStream = cursor.stream();
+        inputStream.pipe(manager).pipe(process.stdout);
+        inputStream.on('end', function() {
+          // console.log('there will be no more data.');
+          // db.close();
+          console.log("READ finished");
+        });
+
+        manager.on('data', function() {
+          indexSaved++
           if (indexSaved % LOG_EVERY==0) {
-            console.log ("Analyzed: "+indexSaved+"/"+total);
+            console.log("ANALYZED: "+indexSaved+'/'+total);
           }
           if (indexSaved>=total) {
+            console.log("EXIT");
             console.timeEnd("total");
-            console.log("FINISHED ANALYZING");
-            Pool.drain(function (err) {
-              process.exit(0);
-            })
-            process.exit(0);
 
-            return true;
+            db.close(function(err) {
+              manager.stop();
+            });
           }
-          
-        }
-
-        var stopped = false;
-
-        var analyzeNext = function() {
-          // console.log("POOL: 1");
-          var stop = function() {
-            if (stopped)
-              return;
-            else {
-
-              stopped = true;
-              console.log("FINISHED READING");
-              // db.close();
-            }
+        });
+        // manager.removeAllListeners('drain');
+        manager.removeAllListeners('end');
+        inputStream.on('data', function() {
+          index++
+          if (index % LOG_EVERY==0) {
+            console.log("READ: "+indexSaved+'/'+total);
           }
-          if (stopped)
-            return;
-          cursor.nextObject(function(err, doc) {
-            if (err)
-              console.log("POOL: error ", err);
-            index ++;
-
-            if (!doc || index>total+1) {
-              stop();
-            } else {
-              if (index % LOG_EVERY==0) {
-                console.log ("Read: "+index+"/"+total + " (current: '"+doc.title+"' )");
-              }
-
-              // console.log(doc);
-              var docStr = JSON.stringify(doc);
-              var enqueue = function() {
-                Pool.enqueue(docStr, function (err, res) {
-                  if (!finishedSaving()) {
-                    analyzeNext();
-                  }
-                  if (res.stdout=="next") {
-
-                    
-                  } else {
-                    console.log("POOL: ERROR!");
-                  }
-                });
-              }
-              // console.log("POOL: enqueing");
-              enqueue();
-
-            }
-          });
-        }
-        for (var i = 0; i <numberWorkers; i++) {
-          setTimeout(analyzeNext, Math.random() * 70 + 10);
-        };
-
-
+        });
       });
 
   });
