@@ -4,7 +4,7 @@
 var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://localhost:27017/wiktionaryToMongo';
 var LOG_EVERY = 1000;
-var LIMIT = 1000;
+var LIMIT = null;
 var path = require('path');
 var fs = require('fs');
 // var lineStream = require('line-stream');
