@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --expose-gc
 
 
 var MongoClient = require('mongodb').MongoClient;
@@ -20,7 +20,7 @@ setTimeout(function(){
     var col = db.collection('enWiktionaryDump');
     var colOutput = db.collection('enWiktionary');
 
-      var cursor = col.find({});//, {title:1, namespace:1});
+      var cursor = col.find({}, {title:1, namespace:1});
       var index = 0;
       var indexSaved = 0;
       cursor.count(function(err, total){
@@ -77,7 +77,6 @@ setTimeout(function(){
               var enqueue = function() {
                 Pool.enqueue(docStr, function (err, res) {
                   if (res.stdout=="next") {
-                    // console.log("POOL: next");
                     if (!finishedSaving())
                       analyzeNext();
                   } else {
