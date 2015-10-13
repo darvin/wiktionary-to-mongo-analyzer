@@ -46,13 +46,15 @@ MongoClient.connect(url, function(err, db) {
     console.log("WORKER ready");
     process.on('message', function (message) {
       var doc = JSON.parse(message);
-      var finished = function(){
-        // console.log("WORKER: analyzed '"+doc.title+ "'")
+      var finished = function(err){
+        console.log("WORKER: analyzed '"+doc.title+ "'")
+        if (err)
+          console.log("WORKER error: ", err);
         process.send("next");
 
       }
       analyzeAndWrite(doc, function(err, res){
-        finished();
+        finished(err);
       });
       // setTimeout(finished, 1000);
 
@@ -61,6 +63,9 @@ MongoClient.connect(url, function(err, db) {
       var cursor = col.find({}, {title:1, namespace:1});
       var next = function() {
         cursor.nextObject(function(err, doc) {
+          if (err) {
+            console.log("WORKER: error: ",err);
+          }
 
           analyzeAndWrite(doc, function(err, res){
             console.log("WORKER: written ", doc.title);
@@ -95,7 +100,7 @@ function scheduleGc() {
 
   setTimeout(function(){
     global.gc();
-    console.log('WORKER: manual gc', process.memoryUsage());
+    // console.log('WORKER: manual gc', process.memoryUsage());
     scheduleGc();
   }, nextSeconds * 1000);
 }
