@@ -19,6 +19,6 @@ mongoimport  --db wiktionaryToMongo --collection enWiktionaryDump --drop --file 
 rm $DUMP
 
 
-./scripts/analyze.js
+node --expose-gc ./scripts/analyze.js
 
 mongoexport --db wiktionaryToMongo --collection enWiktionary |bzip2 > $MONGO_DUMP
