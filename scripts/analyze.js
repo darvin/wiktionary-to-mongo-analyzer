@@ -3,7 +3,7 @@
 
 var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://localhost:27017/wiktionaryToMongo';
-var LOG_EVERY = 1000;
+var LOG_EVERY = 100;
 var LIMIT = null;
 var path = require('path');
 var fs = require('fs');
@@ -16,12 +16,12 @@ var forkfriend = require('forkfriend');
 
 console.log("FOUND CPUS: ",require('os').cpus());
 var numberWorkers  = require('os').cpus().length;
+var MAXQUEUE =numberWorkers;
 
 var manager = forkfriend({
   respawnInterval:300,
   maxQueue:numberWorkers * 2
 });
-
 var spinupTime = numberWorkers * 500;
 manager.add(path.join(__dirname, 'analyze_worker.js'),numberWorkers);
 
@@ -41,7 +41,22 @@ setTimeout(function(){
         console.time("total");
 
         var inputStream = cursor.stream();
-        inputStream.pipe(manager).pipe(process.stdout);
+        var inputStreamPlayPause = function() {
+          if (index - indexSaved<MAXQUEUE) 
+            inputStream.resume();
+          else 
+            inputStream.pause();
+        }
+        manager.pipe(process.stdout);
+        inputStream.on('data', function(chunk) {
+          manager.write(chunk);
+          index++
+          inputStreamPlayPause(); 
+          if (index % LOG_EVERY==0) {
+            console.log("READ: "+index+'/'+total);
+          }
+        });
+
         inputStream.on('end', function() {
           // console.log('there will be no more data.');
           // db.close();
@@ -50,6 +65,8 @@ setTimeout(function(){
 
         manager.on('data', function() {
           indexSaved++
+          inputStreamPlayPause(); 
+
           if (indexSaved % LOG_EVERY==0) {
             console.log("ANALYZED: "+indexSaved+'/'+total);
           }
@@ -64,12 +81,8 @@ setTimeout(function(){
         });
         // manager.removeAllListeners('drain');
         manager.removeAllListeners('end');
-        inputStream.on('data', function() {
-          index++
-          if (index % LOG_EVERY==0) {
-            console.log("READ: "+indexSaved+'/'+total);
-          }
-        });
+
+
       });
 
   });
